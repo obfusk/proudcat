@@ -11,6 +11,7 @@ setup(
   url               = "https://github.com/obfusk/proudcat",
   description       = "proudcat - cat + :rainbow:",
   long_description  = long_description,
+  long_description_content_type = "text/markdown",
   version           = proudcat.__version__,
   author            = "Felix C. Stegerman",
   author_email      = "flx@obfusk.net",
