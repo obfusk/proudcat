@@ -5,7 +5,7 @@
     Date        : 2020-06-20
 
     Copyright   : Copyright (C) 2020  Felix C. Stegerman
-    Version     : v0.0.1
+    Version     : v0.1.0
     License     : GPLv3+
 
 <!-- }}}1 -->
@@ -14,16 +14,18 @@
 
 ## Description
 
-TODO
+proudcat - cat + :rainbow:
 
-## Examples
+proudcat is basically a variant of
+[`pridecat`](https://github.com/lunasorcery/pridecat)
+written in python.
 
 ![screenshot](screenshot.png)
 
 ## Help
 
 ```bash
-$ pridecat --help
+$ proudcat --help
 ```
 
 ## Requirements
@@ -32,14 +34,22 @@ Python >= 3.5 + click.
 
 ## Installing
 
-Install the dependencies, as e.g. debian packages or using `pip`:
+### Using pip
+
+```bash
+$ pip install proudcat
+```
+
+### Manually
+
+Install the dependencies (as e.g. debian packages or using `pip`):
 
 ```bash
 $ apt install python3-click       # debian/ubuntu
 $ pip install click               # pip
 ```
 
-Then just put `pridecat` somewhere on your `$PATH` (e.g. `~/bin`).
+Then just put `proudcat` somewhere on your `$PATH` (e.g. `~/bin`).
 
 ## License
 

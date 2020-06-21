@@ -3,17 +3,17 @@
 
 # --                                                            ; {{{1
 #
-# File        : pridecat
+# File        : proudcat
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
 # Date        : 2020-06-20
 #
 # Copyright   : Copyright (C) 2020  Felix C. Stegerman
-# Version     : v0.0.1
+# Version     : v0.1.0
 # License     : GPLv3+
 #
 # --                                                            ; }}}1
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 import itertools, os, sys
 from collections import namedtuple
@@ -29,16 +29,25 @@ COLORTERM = os.environ.get("COLORTERM", "")
 TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
 
 # TODO: more flags!
+DFLAG = "pride"
 FLAGS = dict(
   pride = (rgb(255, 0, 0), rgb(255, 165, 0), rgb(255, 255, 0),
            rgb(0, 128, 0), rgb(0, 0, 255), rgb(128, 0, 128))
 )
 
-# TODO: more help!
-@click.command()
-@click.option("-f", "--flag", "flags", multiple = True, default = ["pride"])
-@click.option("-b", "--background", is_flag = True)
-@click.option("-t/-T", "--truecolor/--no-truecolor", default = TRUECOLOR)
+@click.command(help = """
+  proudcat - cat + rainbow
+
+  Currently avaliable flags: {}.
+""".format(",".join(sorted(FLAGS)), DFLAG))
+@click.option("-f", "--flag", "flags", multiple = True, default = [DFLAG],
+              help = "Choose which flags to use;" +
+                     " default: {}.".format(DFLAG))
+@click.option("-b", "--background", is_flag = True,
+              help = "Set background colour (instead of foreground).")
+@click.option("-t/-T", "--truecolor/--no-truecolor", default = TRUECOLOR,
+              help = "Explicitly enable/disable 24-bit colours;" +
+                     " default: autodetect.")
 @click.version_option(__version__)
 @click.argument("files", nargs = -1, type = click.File())
 @click.pass_context
