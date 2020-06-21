@@ -10,6 +10,7 @@
 
 <!-- }}}1 -->
 
+[![PyPI Version](https://img.shields.io/pypi/v/proudcat.svg)](https://pypi.python.org/pypi/proudcat)
 [![GPLv3+](https://img.shields.io/badge/license-GPLv3+-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 ## Description
