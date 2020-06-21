@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# encoding: utf-8
+
+# --                                                            ; {{{1
+#
+# File        : pridecat
+# Maintainer  : Felix C. Stegerman <flx@obfusk.net>
+# Date        : 2020-06-20
+#
+# Copyright   : Copyright (C) 2020  Felix C. Stegerman
+# Version     : v0.0.1
+# License     : GPLv3+
+#
+# --                                                            ; }}}1
+
+__version__ = "0.0.1"
+
+import itertools, os, sys
+from collections import namedtuple
+
+import click
+
+rgb = namedtuple("rgb", "r g b".split())
+
+def rgbto8(c):
+  return 16 + c.r*6//256*36 + c.g*6//256*6 + c.b*6//256
+
+COLORTERM = os.environ.get("COLORTERM", "")
+TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
+
+# TODO: more flags!
+FLAGS = dict(
+  pride = (rgb(255, 0, 0), rgb(255, 165, 0), rgb(255, 255, 0),
+           rgb(0, 128, 0), rgb(0, 0, 255), rgb(128, 0, 128))
+)
+
+# TODO: more help!
+@click.command()
+@click.option("-f", "--flag", "flags", multiple = True, default = ["pride"])
+@click.option("-b", "--background", is_flag = True)
+@click.option("-t/-T", "--truecolor/--no-truecolor", default = TRUECOLOR)
+@click.version_option(__version__)
+@click.argument("files", nargs = -1, type = click.File())
+@click.pass_context
+def cli(ctx, files, flags, background, truecolor):
+  ctx.color = True
+  for flag in flags:
+    if flag not in FLAGS:
+      click.echo("unknown flag: " + flag, err = True)
+      ctx.exit(1)
+  setc, resetc = (48, 49) if background else (38, 39)
+  if truecolor:
+    code = lambda c: "2;{};{};{}".format(c.r, c.g, c.b)
+  else:
+    code = lambda c: "5;{}".format(rgbto8(c))
+  setcolour = lambda c: "\x1b[{};{}m".format(setc, code(c))
+  resetcolour = lambda: "\x1b[{};m".format(resetc)
+  it = iter(itertools.cycle( c for f in flags for c in FLAGS[f] ))
+  for f in files or [sys.stdin]:
+    for line in f:
+      sline = line.strip()
+      if sline:
+        i = line.find(sline[0])
+        line = line[:i] + setcolour(next(it)) + sline \
+             + resetcolour() + line[i+len(sline):]
+      click.echo(line, nl = False)
+
+if __name__ == "__main__":
+  cli()
+
+# vim: set tw=70 sw=2 sts=2 et fdm=marker :
