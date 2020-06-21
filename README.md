@@ -23,7 +23,7 @@ TODO
 ## Help
 
 ```bash
-$ ghbak --help
+$ pridecat --help
 ```
 
 ## Requirements
