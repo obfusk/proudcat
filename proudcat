@@ -64,7 +64,7 @@ def cli(ctx, files, flags, background, truecolor):
     code = lambda c: "5;{}".format(rgbto8(c))
   setcolour = lambda c: "\x1b[{};{}m".format(setc, code(c))
   resetcolour = lambda: "\x1b[{};m".format(resetc)
-  it = iter(itertools.cycle( c for f in flags for c in FLAGS[f] ))
+  it = itertools.cycle( c for f in flags for c in FLAGS[f] )
   for f in files or [sys.stdin]:
     for line in f:
       sline = line.strip()
