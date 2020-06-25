@@ -5,7 +5,7 @@
 #
 # File        : proudcat
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2020-06-20
+# Date        : 2020-06-25
 #
 # Copyright   : Copyright (C) 2020  Felix C. Stegerman
 # Version     : v0.1.1
@@ -28,18 +28,60 @@ def rgbto8(c):
 COLORTERM = os.environ.get("COLORTERM", "")
 TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
 
-# TODO: more flags!
+# https://en.wikipedia.org/wiki/Pride_flag#Gallery
 DFLAG = "pride"
-FLAGS = dict(
-  pride = (rgb(255, 0, 0), rgb(255, 165, 0), rgb(255, 255, 0),
-           rgb(0, 128, 0), rgb(0, 0, 255), rgb(128, 0, 128))
+FLAGS = dict(                                                   # {{{1
+  pride       = (rgb(228, 3, 3), rgb(255, 140, 0), rgb(255, 237, 0),
+                 rgb(0, 128, 38), rgb(0, 77, 255), rgb(117, 7, 135)),
+  agender     = (rgb(0, 0, 0), rgb(185, 185, 185),
+                 rgb(255, 255, 255), rgb(184, 244, 131)),
+  aromantic   = (rgb(61, 165, 66), rgb(167, 211, 121),
+                 rgb(255, 255, 255), rgb(169, 169, 169), rgb(0, 0, 0)),
+  asexual     = (rgb(0, 0, 0), rgb(163, 163, 163),
+                 rgb(255, 255, 255), rgb(128, 0, 128)),
+  bisexual    = (rgb(214, 2, 112), rgb(0, 56, 168), rgb(155, 79, 150)),
+  genderfluid = (rgb(255, 117, 162), rgb(255, 255, 255),
+                 rgb(190, 24, 214), rgb(0, 0, 0), rgb(51, 62, 189)),
+  genderqueer = (rgb(181, 126, 220), rgb(255, 255, 255), rgb(74, 129, 35)),
+  lesbian     = (rgb(163, 2, 98), rgb(211, 98, 164), rgb(255, 255, 255),
+                 rgb(255, 154, 86), rgb(213, 45, 0)),
+  nonbinary   = (rgb(255, 244, 48), rgb(255, 255, 255),
+                 rgb(156, 89, 209), rgb(0, 0, 0)),
+  pansexual   = (rgb(33, 177, 255), rgb(255, 216, 0), rgb(255, 33, 140)),
+  polysexual  = (rgb(246, 28, 185), rgb(7, 213, 105), rgb(28, 146, 246)),
+  transgender = (rgb(91, 206, 250), rgb(245, 169, 184), rgb(255, 255, 255)),
+)                                                               # }}}1
+ALIASES = dict(
+  lgbt = "pride", aro = "aromantic", ace = "asexual", bi = "bisexual",
+  enby = "nonbinary", nb = "nonbinary", pan = "pansexual",
+  trans = "transgender",
 )
+
+# TODO
+BLACK, WHITE = rgb(0, 0, 0), rgb(255, 255, 255)
+
+def with_colour(bg, tc, c, s):
+  sc, rc, cl = (48, 49, "\x1b[2K") if bg else (38, 39, "")
+  code = (lambda c: "2;{};{};{}".format(c.r, c.g, c.b)) if tc else \
+         (lambda c: "5;{}".format(rgbto8(c)))
+  return "\x1b[{};{}m{}{}\x1b[{};m".format(sc, code(c), cl, s, rc)
+
+def colour(bg, tc, li, c, s):
+  da = bg if li else not bg
+  if (da and brightness(c) < 0.20) or (not da and brightness(c) > 0.75):
+    s = with_colour(not bg, tc, WHITE if da else BLACK, s)
+  return with_colour(bg, tc, c, s)
+
+def brightness(c):
+  return (c.r * 299 + c.g * 587 + c.b * 114) // 1000 / 255
 
 @click.command(help = """
   proudcat - cat + rainbow
 
-  Currently avaliable flags: {}.
-""".format(",".join(sorted(FLAGS)), DFLAG))
+  Flags: {}.
+
+  Aliases: {}.
+""".format(", ".join(FLAGS), ", ".join(ALIASES), DFLAG))
 @click.option("-f", "--flag", "flags", multiple = True, default = [DFLAG],
               help = "Choose which flags to use;" +
                      " default: {}.".format(DFLAG))
@@ -48,31 +90,36 @@ FLAGS = dict(
 @click.option("-t/-T", "--truecolor/--no-truecolor", default = TRUECOLOR,
               help = "Explicitly enable/disable 24-bit colours;" +
                      " default: autodetect.")
+@click.option("--light", is_flag = True, help = "Light terminal.")
+@click.option("--demo", is_flag = True, help = "Demonstrate flags.")
 @click.version_option(__version__)
 @click.argument("files", nargs = -1, type = click.File())
 @click.pass_context
-def cli(ctx, files, flags, background, truecolor):
+def cli(ctx, files, flags, background, truecolor, light, demo):
   ctx.color = True
-  for flag in flags:
-    if flag not in FLAGS:
-      click.echo("unknown flag: " + flag, err = True)
-      ctx.exit(1)
-  setc, resetc = (48, 49) if background else (38, 39)
-  if truecolor:
-    code = lambda c: "2;{};{};{}".format(c.r, c.g, c.b)
+  flags     = [ c for f in flags for c in f.split(",") ]
+  tty       = sys.stdout.isatty()
+  clr       = lambda c, s: colour(background, truecolor, light, c, s)
+  if demo:
+    for f, cs in FLAGS.items():
+      click.echo("┌" + "─" * len(f) + "┐")
+      for c in cs:
+        click.echo("│" + clr(c, f) + "│")
+      click.echo("└" + "─" * len(f) + "┘")
   else:
-    code = lambda c: "5;{}".format(rgbto8(c))
-  setcolour = lambda c: "\x1b[{};{}m".format(setc, code(c))
-  resetcolour = lambda: "\x1b[{};m".format(resetc)
-  it = itertools.cycle( c for f in flags for c in FLAGS[f] )
-  for f in files or [sys.stdin]:
-    for line in f:
-      sline = line.strip()
-      if sline:
-        i = line.find(sline[0])
-        line = line[:i] + setcolour(next(it)) + sline \
-             + resetcolour() + line[i+len(sline):]
-      click.echo(line, nl = False)
+    for flag in flags:
+      if flag not in FLAGS and flag not in ALIASES:
+        click.echo("unknown flag: " + flag, err = True)
+        ctx.exit(1)
+    colours = lambda f: FLAGS[f] if f in FLAGS else FLAGS[ALIASES[f]]
+    it = itertools.cycle( c for f in flags for c in colours(f) )
+    for f in files or [sys.stdin]:
+      for line in f:
+        sline = line.strip()
+        if sline or (background and tty):
+          i     = line.find(sline[0]) if sline else 0
+          line  = line[:i] + clr(next(it), sline) + line[i+len(sline):]
+        click.echo(line, nl = False)
 
 if __name__ == "__main__":
   cli()
