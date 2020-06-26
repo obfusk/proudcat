@@ -5,7 +5,7 @@
 #
 # File        : proudcat
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2020-06-25
+# Date        : 2020-06-26
 #
 # Copyright   : Copyright (C) 2020  Felix C. Stegerman
 # Version     : v0.1.1
@@ -30,6 +30,7 @@ TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
 
 # https://en.wikipedia.org/wiki/Pride_flag#Gallery
 DFLAG = "pride"
+
 FLAGS = dict(                                                   # {{{1
   pride       = (rgb(228, 3, 3), rgb(255, 140, 0), rgb(255, 237, 0),
                  rgb(0, 128, 38), rgb(0, 77, 255), rgb(117, 7, 135)),
@@ -51,6 +52,7 @@ FLAGS = dict(                                                   # {{{1
   polysexual  = (rgb(246, 28, 185), rgb(7, 213, 105), rgb(28, 146, 246)),
   transgender = (rgb(91, 206, 250), rgb(245, 169, 184), rgb(255, 255, 255)),
 )                                                               # }}}1
+
 ALIASES = dict(
   lgbt = "pride", aro = "aromantic", ace = "asexual", bi = "bisexual",
   enby = "nonbinary", nb = "nonbinary", pan = "pansexual",
@@ -59,6 +61,10 @@ ALIASES = dict(
 
 # TODO
 BLACK, WHITE = rgb(0, 0, 0), rgb(255, 255, 255)
+
+def colours(flag):
+  cs = FLAGS[flag if flag in FLAGS else ALIASES[flag]]
+  return cs if len(cs) > 3 else [ d for c in cs for d in [c] * 2 ]
 
 def with_colour(bg, tc, c, s, clear = True):
   sc, rc, cl = (48, 49, "\x1b[2K" if clear else "") if bg else (38, 39, "")
@@ -100,18 +106,17 @@ def cli(ctx, files, flags, background, truecolor, light, demo):
   flags     = [ c for f in flags for c in f.split(",") ]
   tty       = sys.stdout.isatty()
   if demo:
-    for f, cs in FLAGS.items():
-      click.echo("┌" + "─" * len(f) + "┐")
-      for c in cs:
-        s = colour(background, truecolor, light, c, f, False)
+    for flag in FLAGS:
+      click.echo("┌" + "─" * len(flag) + "┐")
+      for c in colours(flag):
+        s = colour(background, truecolor, light, c, flag, False)
         click.echo("│" + s + "│")
-      click.echo("└" + "─" * len(f) + "┘")
+      click.echo("└" + "─" * len(flag) + "┘")
   else:
     for flag in flags:
       if flag not in FLAGS and flag not in ALIASES:
         click.echo("unknown flag: " + flag, err = True)
         ctx.exit(1)
-    colours = lambda f: FLAGS[f] if f in FLAGS else FLAGS[ALIASES[f]]
     it = itertools.cycle( c for f in flags for c in colours(f) )
     for f in files or [sys.stdin]:
       for line in f:
