@@ -60,17 +60,17 @@ ALIASES = dict(
 # TODO
 BLACK, WHITE = rgb(0, 0, 0), rgb(255, 255, 255)
 
-def with_colour(bg, tc, c, s):
-  sc, rc, cl = (48, 49, "\x1b[2K") if bg else (38, 39, "")
+def with_colour(bg, tc, c, s, clear = True):
+  sc, rc, cl = (48, 49, "\x1b[2K" if clear else "") if bg else (38, 39, "")
   code = (lambda c: "2;{};{};{}".format(c.r, c.g, c.b)) if tc else \
          (lambda c: "5;{}".format(rgbto8(c)))
   return "\x1b[{};{}m{}{}\x1b[{};m".format(sc, code(c), cl, s, rc)
 
-def colour(bg, tc, li, c, s):
+def colour(bg, tc, li, c, s, clear = True):
   da = bg if li else not bg
   if (da and brightness(c) < 0.20) or (not da and brightness(c) > 0.75):
-    s = with_colour(not bg, tc, WHITE if da else BLACK, s)
-  return with_colour(bg, tc, c, s)
+    s = with_colour(not bg, tc, WHITE if da else BLACK, s, clear)
+  return with_colour(bg, tc, c, s, clear)
 
 def brightness(c):
   return (c.r * 299 + c.g * 587 + c.b * 114) // 1000 / 255
@@ -99,12 +99,12 @@ def cli(ctx, files, flags, background, truecolor, light, demo):
   ctx.color = True
   flags     = [ c for f in flags for c in f.split(",") ]
   tty       = sys.stdout.isatty()
-  clr       = lambda c, s: colour(background, truecolor, light, c, s)
   if demo:
     for f, cs in FLAGS.items():
       click.echo("┌" + "─" * len(f) + "┐")
       for c in cs:
-        click.echo("│" + clr(c, f) + "│")
+        s = colour(background, truecolor, light, c, f, False)
+        click.echo("│" + s + "│")
       click.echo("└" + "─" * len(f) + "┘")
   else:
     for flag in flags:
@@ -118,7 +118,8 @@ def cli(ctx, files, flags, background, truecolor, light, demo):
         sline = line.strip()
         if sline or (background and tty):
           i     = line.find(sline[0]) if sline else 0
-          line  = line[:i] + clr(next(it), sline) + line[i+len(sline):]
+          s     = colour(background, truecolor, light, next(it), sline)
+          line  = line[:i] + s + line[i+len(sline):]
         click.echo(line, nl = False)
 
 if __name__ == "__main__":
