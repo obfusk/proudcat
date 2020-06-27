@@ -28,9 +28,9 @@ def rgbto8(c):
 COLORTERM = os.environ.get("COLORTERM", "")
 TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
 
-# https://en.wikipedia.org/wiki/Pride_flag#Gallery
 DFLAG = "pride"
 
+# https://en.wikipedia.org/wiki/Pride_flag#Gallery
 FLAGS = dict(                                                   # {{{1
   pride       = (rgb(228, 3, 3), rgb(255, 140, 0), rgb(255, 237, 0),
                  rgb(0, 128, 38), rgb(0, 77, 255), rgb(117, 7, 135)),

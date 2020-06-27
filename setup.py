@@ -33,5 +33,5 @@ setup(
   keywords          = "cat cli terminal colors colours",
   scripts           = ["proudcat"],
   python_requires   = ">=3.5",
-  install_requires  = ["click>=6.0"]
+  install_requires  = ["click>=6.0"],
 )
