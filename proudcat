@@ -5,7 +5,7 @@
 #
 # File        : proudcat
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2020-06-27
+# Date        : 2020-06-28
 #
 # Copyright   : Copyright (C) 2020  Felix C. Stegerman
 # Version     : v0.1.1
@@ -22,8 +22,7 @@ import click
 
 rgb = namedtuple("rgb", "r g b".split())
 
-def rgbto8(c):
-  return 16 + c.r*6//256*36 + c.g*6//256*6 + c.b*6//256
+def rgbto8(c): return 16 + c.r*6//256*36 + c.g*6//256*6 + c.b*6//256
 
 COLORTERM = os.environ.get("COLORTERM", "")
 TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
@@ -84,22 +83,29 @@ def colour(bg, tc, li, c, s, clear = True):
 def brightness(c):
   return (c.r * 299 + c.g * 587 + c.b * 114) // 1000 / 255
 
-def header(width, name = None):
+def frame_header(width, name = None):
   return "┌" + ("[" + name + "]" if name else "").center(width, "─") + "┐"
 
 def frame_line(line):
   return "│" + line + "│"
 
-def footer(width):
+def frame_footer(width):
   return "└" + "─" * width + "┘"
 
-def terminal_width():
-  for n in [0, 1, 2]:
+def terminal_width(fallback = 80):
+  # NB: don't use shutil.get_terminal_size() as it only checks stdout
+  # (which is not a terminal when piped to less)
+  try:
+    return int(os.environ["COLUMNS"])
+  except (KeyError, ValueError):
+    pass
+  for n in ( getattr(sys, "__std" + x + "__").fileno()
+               for x in "in err out".split() ):
     try:
       return os.get_terminal_size(n).columns
     except OSError:
       pass
-  return 80
+  return fallback
 
 @click.command(help = """
   proudcat - cat + rainbow
@@ -111,29 +117,29 @@ def terminal_width():
 @click.option("-f", "--flag", "flags", multiple = True, default = [DFLAG],
               help = "Choose which flags to use;" +
                      " default: {}.".format(DFLAG))
-@click.option("-b", "--background", is_flag = True,
+@click.option("-b", "--background", "bg", is_flag = True,
               help = "Set background colour (instead of foreground).")
-@click.option("-t/-T", "--truecolor/--no-truecolor", default = TRUECOLOR,
+@click.option("-t/-T", "--truecolor/--no-truecolor", "tc",
+              default = TRUECOLOR,
               help = "Explicitly enable/disable 24-bit colours;" +
                      " default: autodetect.")
 @click.option("--light", is_flag = True, help = "Light terminal.")
 @click.option("--frame", is_flag = True, help = "Frame text.")
-@click.option("--demo", is_flag = True, help = "Demonstrate flags.")
+@click.option("--demo" , is_flag = True, help = "Demonstrate flags.")
 @click.version_option(__version__)
 @click.argument("files", nargs = -1, type = click.File())
 @click.pass_context
-def cli(ctx, files, flags, background, truecolor, light, frame, demo):
-  ctx.color = True
-  width     = terminal_width() - 2
-  flags     = [ c for f in flags for c in f.split(",") ]
-  tty       = sys.stdout.isatty()
+def cli(ctx, files, flags, bg, tc, light, frame, demo):
+  ctx.color   = True
+  tty, width  = sys.stdout.isatty(), terminal_width() - 2
+  flags       = [ c for f in flags for c in f.split(",") ]
   if demo:
     for flag in FLAGS:
-      click.echo(header(width))
+      click.echo(frame_header(width))
       for c in colours(flag):
-        click.echo(frame_line(colour(background, truecolor, light, c,
+        click.echo(frame_line(colour(bg, tc, light, c,
                                      flag.center(width), False)))
-      click.echo(footer(width))
+      click.echo(frame_footer(width))
   else:
     for flag in flags:
       if flag not in FLAGS and flag not in ALIASES:
@@ -141,23 +147,23 @@ def cli(ctx, files, flags, background, truecolor, light, frame, demo):
         ctx.exit(1)
     it = itertools.cycle( c for f in flags for c in colours(f) )
     for f in files or [sys.stdin]:
-      if frame: click.echo(header(width, f.name))
+      if frame:
+        name = None if f is sys.stdin else f.name
+        click.echo(frame_header(width, name))
       for line in f:
         sline = line.strip()
         if frame:
-          if sline or background:
-            jline = (" " + line.rstrip("\n")).ljust(width)
-            click.echo(frame_line(colour(background, truecolor, light,
-                                         next(it), jline, False)))
-          else:
-            click.echo(frame_line("".center(width)))
+          line = (" " + line.rstrip("\n")).ljust(width)
+          if sline or bg:
+            line = colour(bg, tc, light, next(it), line, False)
+          click.echo(frame_line(line))
         else:
-          if sline or (background and tty):
+          if sline or (bg and tty):
             i     = line.find(sline[0]) if sline else 0
-            s     = colour(background, truecolor, light, next(it), sline)
+            s     = colour(bg, tc, light, next(it), sline)
             line  = line[:i] + s + line[i+len(sline):]
           click.echo(line, nl = False)
-      if frame: click.echo(footer(width))
+      if frame: click.echo(frame_footer(width))
 
 if __name__ == "__main__":
   cli()

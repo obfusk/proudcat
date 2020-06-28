@@ -2,7 +2,7 @@
 
     File        : README.md
     Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-    Date        : 2020-06-20
+    Date        : 2020-06-28
 
     Copyright   : Copyright (C) 2020  Felix C. Stegerman
     Version     : v0.1.1
@@ -18,10 +18,13 @@
 proudcat - cat + :rainbow:
 
 proudcat is basically a variant of
+[`proudcat-rust`](https://github.com/obfusk/proudcat-rust) /
 [`pridecat`](https://github.com/lunasorcery/pridecat)
 written in python.
 
 ![screenshot](screenshot.png)
+
+![screenshot](screenshot-bg-frame.png)
 
 ## Help
 
