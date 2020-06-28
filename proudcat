@@ -15,7 +15,7 @@
 
 __version__ = "0.1.1"
 
-import itertools, os, sys
+import itertools, os, sys, shutil
 from collections import namedtuple
 
 import click
@@ -93,14 +93,6 @@ def frame_line(line):
 def footer(width):
   return "└" + "─" * width + "┘"
 
-def terminal_width():
-  for n in [0, 1, 2]:
-    try:
-      return os.get_terminal_size(n).columns
-    except OSError:
-      pass
-  return 80
-
 @click.command(help = """
   proudcat - cat + rainbow
 
@@ -124,7 +116,7 @@ def terminal_width():
 @click.pass_context
 def cli(ctx, files, flags, background, truecolor, light, frame, demo):
   ctx.color = True
-  width     = terminal_width() - 2
+  width     = shutil.get_terminal_size().columns - 2
   flags     = [ c for f in flags for c in f.split(",") ]
   tty       = sys.stdout.isatty()
   if demo:
