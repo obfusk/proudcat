@@ -84,7 +84,7 @@ def brightness(c):
   return (c.r * 299 + c.g * 587 + c.b * 114) // 1000 / 255
 
 def frame_header(width, name = None):
-  return "┌" + ("[" + name + "]" if name else "").center(width, "─") + "┐"
+  return "┌" + ("[" + name + "]" if name else "").center(width, '─') + "┐"
 
 def frame_line(line):
   return "│" + line + "│"
