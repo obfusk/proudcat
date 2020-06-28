@@ -100,7 +100,7 @@ def terminal_width(fallback = 80):
   except (KeyError, ValueError):
     pass
   for n in ( getattr(sys, "__std" + x + "__").fileno()
-               for x in "in err out".split() ):
+               for x in "out in err".split() ):
     try:
       return os.get_terminal_size(n).columns
     except OSError:
