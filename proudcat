@@ -5,7 +5,7 @@
 #
 # File        : proudcat
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2020-07-02
+# Date        : 2021-04-30
 #
 # Copyright   : Copyright (C) 2020  Felix C. Stegerman
 # Version     : v0.2.0
@@ -15,7 +15,7 @@
 
 __version__ = "0.2.0"
 
-import itertools, os, sys
+import itertools, os, re, sys
 from collections import namedtuple
 
 import click
@@ -27,6 +27,7 @@ def rgbto8(c): return 16 + c.r*6//256*36 + c.g*6//256*6 + c.b*6//256
 COLORTERM = os.environ.get("COLORTERM", "")
 TRUECOLOR = "truecolor" in COLORTERM or "24bit" in COLORTERM
 
+SPACE = re.compile(r"(\s+)")
 DFLAG = "pride"
 
 # https://en.wikipedia.org/wiki/Pride_flag#Gallery
@@ -74,11 +75,16 @@ def with_colour(bg, tc, c, s, clear = True):
          (lambda c: "5;{}".format(rgbto8(c)))
   return "\x1b[{};{}m{}{}\x1b[{};m".format(sc, code(c), cl, s, rc)
 
-def colour(bg, tc, li, c, s, clear = True):
+def colour(bg, tc, li, c_or_it, s, clear = True):
+  c = c_or_it if isinstance(c_or_it, rgb) else next(c_or_it)
   da = bg if li else not bg
   if (da and brightness(c) < 0.20) or (not da and brightness(c) > 0.75):
     s = with_colour(not bg, tc, WHITE if da else BLACK, s, clear)
   return with_colour(bg, tc, c, s, clear)
+
+def colour_words(bg, tc, li, c_or_it, s, clear = True):
+  return "".join( w if w.isspace() else colour(bg, tc, li, c_or_it, w, clear)
+                    for w in SPACE.split(s) if w )
 
 def brightness(c):
   return (c.r * 299 + c.g * 587 + c.b * 114) // 1000 / 255
@@ -123,13 +129,15 @@ def terminal_width(fallback = 80):
               default = TRUECOLOR,
               help = "Explicitly enable/disable 24-bit colours;" +
                      " default: autodetect.")
+@click.option("--word", "-w", is_flag = True,
+              help = "Change colour every word instead of every line.")
 @click.option("--light", is_flag = True, help = "Light terminal.")
 @click.option("--frame", is_flag = True, help = "Frame text.")
 @click.option("--demo" , is_flag = True, help = "Demonstrate flags.")
 @click.version_option(__version__)
 @click.argument("files", nargs = -1, type = click.File())
 @click.pass_context
-def cli(ctx, files, flags, bg, tc, light, frame, demo):
+def cli(ctx, files, flags, bg, tc, word, light, frame, demo):
   ctx.color   = True
   tty, width  = sys.stdout.isatty(), terminal_width() - 2
   flags       = [ c for f in flags for c in f.split(",") ]
@@ -146,6 +154,7 @@ def cli(ctx, files, flags, bg, tc, light, frame, demo):
         click.echo("unknown flag: " + flag, err = True)
         ctx.exit(1)
     it = itertools.cycle( c for f in flags for c in colours(f) )
+    clr = colour_words if word else colour
     for f in files or [sys.stdin]:
       if frame:
         name = None if f is sys.stdin else f.name
@@ -155,12 +164,12 @@ def cli(ctx, files, flags, bg, tc, light, frame, demo):
         if frame:
           line = (" " + line.rstrip("\n")).ljust(width)
           if sline or bg:
-            line = colour(bg, tc, light, next(it), line, False)
+            line = clr(bg, tc, light, it, line, False)
           click.echo(frame_line(line))
         else:
           if sline or (bg and tty):
             i     = line.find(sline[0]) if sline else 0
-            s     = colour(bg, tc, light, next(it), sline)
+            s     = clr(bg, tc, light, it, sline, not word)
             line  = line[:i] + s + line[i+len(sline):]
           click.echo(line, nl = False)
       if frame: click.echo(frame_footer(width))
